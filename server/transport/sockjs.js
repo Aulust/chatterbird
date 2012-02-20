@@ -33,7 +33,7 @@ Sockjs.prototype.init = function() {
         if(action === 'subscribe') {
           self.subscribe(conn.id, message.queue, message.params);
         }
-      }
+      } catch(e) {}
     });
     conn.on('close', function() {
       self.disconnect(conn.id);
