@@ -10,38 +10,22 @@ if(typeof module !== 'undefined') {
   module.exports = Protocol;
 }
 
-Protocol.createMessage = function(id, action) {
+Protocol.createMessage = function(action) {
   return {
-    action: action,
-    id: id
+    action: action
   };
 };
 
-Protocol.createConnectMessage = function(id) {
-  var message = this.createMessage(id, 'connect');
-  return message;
-};
-
-Protocol.createConnectResponseMessage = function(id) {
-  var message = this.createMessage(id, 'connect');
-  return message;
-};
-
-Protocol.createReceiveMessage = function(id) {
-  var message = this.createMessage(id, 'receive');
-  return message;
-};
-
 Protocol.createReceiveResponseMessage = function(id, queue, status, data) {
-  var message = this.createMessage(id, 'receive');
+  var message = this.createMessage('receive');
   message.queue = queue;
   message.status = status;
   message.data = data;
   return message;
 };
 
-Protocol.createSubscribeMessage = function(id, queue, params) {
-  var message = this.createMessage(id, 'subscribe');
+Protocol.createSubscribeMessage = function(queue, params) {
+  var message = this.createMessage('subscribe');
   message.queue = queue;
   message.params = params;
   return message;

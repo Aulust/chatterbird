@@ -9,10 +9,7 @@ COMPILER = java -jar ${PREFIX}/vendor/compiler.jar
 PARAMS = --compilation_level SIMPLE_OPTIMIZATIONS
 
 BASE_FILES = ${SRC_DIR}/utils/json2.js\
-	${SRC_DIR}/data.js\
 	${SRC_DIR}/protocol.js\
-	${SRC_DIR}/transport/xhr.js\
-	${SRC_DIR}/transport/transport.js\
 	${SRC_DIR}/connection.js\
 	${SRC_DIR}/core.js\
 	${SRC_DIR}/socket.js

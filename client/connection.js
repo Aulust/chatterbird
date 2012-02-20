@@ -4,14 +4,10 @@ var Connection = function(endpoint) {
   this.protocol = Protocol;
   this.messages = [];
   this._queues = {};
-
-  this.init(endpoint);
+  this._endpoint = endpoint;
 
   this.connect();
 };
-
-Connection.prototype = new transport.Transport();
-Connection.constructor = Connection;
 
 Connection.CONNECTING = 0; //Connection message was sent
 Connection.OPEN = 1; //Connection established
@@ -19,25 +15,6 @@ Connection.DELAY = 2; //Send connect request later
 Connection.ERROR = 3; //Error during connection, reconnect automatically or manually
 Connection.BROKEN = 4; //Backend broken, reconnect not possible
 Connection.CLOSED = 5; //Not connected yet or connection was closed manually
-
-Connection.prototype.prepareReceiveMessage = function() {
-  if(this.state === Connection.OPEN) {
-    return JSON.stringify([Protocol.createReceiveMessage(this.id)]);
-  }
-
-  return null;
-};
-
-Connection.prototype.prepareSendMessage = function() {
-  var message = null;
-
-  if(this.messages.length !== 0) {
-    message =  JSON.stringify(this.messages);
-    this.messages = [];
-  }
-
-  return message;
-};
 
 Connection.prototype.addSocket = function(socket) {
   this._queues[socket._queue] = {};
@@ -67,11 +44,9 @@ Connection.prototype._receive = function(status, data) {
   } catch(e) {}
 };
 
-Connection.prototype._handle = function(message, callback, scope) {
+Connection.prototype._handle = function(message) {
   var action = message.action;
 
-  if(action === 'connect')
-    this._connected(message.id);
   if(action === 'subscribed')
     this._subscribed(message.queue, message.status, message.params);
   if(action === 'receive')
@@ -80,22 +55,31 @@ Connection.prototype._handle = function(message, callback, scope) {
 
 Connection.prototype.connect = function() {
   if(this.state === Connection.CLOSED) {
-    var connectMessage = Protocol.createConnectMessage(this.id);
-    this.messages.push(connectMessage);
     this.state = Connection.CONNECTING;
+    this.transport = new SockJS(this._endpoint);
+
+    var self = this;
+
+    this.transport.onopen = function() {
+      self._connected();
+    }
+    this.transport.onmessage = function(message) {
+      var data = JSON.parse(message.data);
+      self._handle(data);
+    }
+    this.transport.onclose = function() {
+      self._reconnect();
+    }
   }
 };
 
 Connection.prototype.subscribe = function(queue, params) {
-  this.messages.push(Protocol.createSubscribeMessage(this.id, queue, params));
+  this.transport.send(JSON.stringify(Protocol.createSubscribeMessage(queue, params)));
 };
 
-Connection.prototype._connected = function(id) {
-  if(id !== null) {
-    this.state = Connection.OPEN;
-    this.id = id;
-    this._updateSubscriptions();
-  }
+Connection.prototype._connected = function() {
+  this.state = Connection.OPEN;
+  this._updateSubscriptions();
 };
 
 Connection.prototype._updateSubscriptions = function() {
@@ -116,9 +100,9 @@ Connection.prototype._subscribed = function(queue, status, params) {
     this._queues[queue].socket.onerror(status, params);
     this._queues[queue].status = Connection.BROKEN;
   }
-  if(status === Protocol.CLIENT_NOT_EXIST) {
+  /*if(status === Protocol.CLIENT_NOT_EXIST) {
     this._reconnect();
-  }
+  }*/
 };
 
 Connection.prototype._received = function(queue, status, data) {
@@ -132,6 +116,7 @@ Connection.prototype._received = function(queue, status, data) {
 
 Connection.prototype._reconnect = function() {
   this.state = Connection.CLOSED;
+  delete this.transport;
   for(var queue in this._queues) {
     if(this._queues[queue].status !== Connection.BROKEN) {
       this._queues[queue].status = Connection.DELAY;
@@ -141,5 +126,5 @@ Connection.prototype._reconnect = function() {
   var self = this;
   var timerFunction = function() { self.connect(); };
 
-  setTimeout(timerFunction, 5000);
+  setTimeout(timerFunction, 25000);
 };
