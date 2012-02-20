@@ -5,7 +5,7 @@ var Core = function() {
 
 Core.prototype._getConfiguration = function() {
   var data = this.getCookie('ttt');
-  var config = JSON.parse('{"node1":{"address":"http://sc2tv.ru/notifications","queues":["admin","stream"]}}');
+  var config = JSON.parse('{"node1":{"address":"http://sc2tv.ru:8080","queues":["admin","stream"]}}');
 
   for(var server in this._servers) {
     if(typeof(server.address) != 'string' || !(server.queues instanceof Array)) {

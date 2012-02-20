@@ -1,6 +1,6 @@
 var servers = {
   node1: {
-    address: 'http://sc2tv.ru/notifications',
+    address: 'http://sc2tv.ru',
     port: 8080,
     queues: [
       {
