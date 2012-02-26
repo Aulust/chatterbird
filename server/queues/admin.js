@@ -27,10 +27,12 @@ Admin.prototype._getSystemData = function() {
   var writeToFiles = function() {
     var data = Object.keys(self._engine._clients).length;
 
-    var stream = fs.createWriteStream("/tmp/nodestat");
-    stream.once('open', function(fd) {
+    var stream = fs.createWriteStream(this._config.statFile);
+    stream.once('open', function() {
       stream.write(data);
     });
+
+    stream.end();
   };
 
   setInterval(timerFunction, 4000);

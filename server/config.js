@@ -1,11 +1,11 @@
 var servers = {
   node1: {
-    address: 'http://sc2tv.ru',
+    address: 'http://sc2tv.ru/notifications',
     port: 8080,
     queues: [
       {
         name: 'admin',
-        dataPort: 9999
+        statFile: '/tmp/nodestat'
       }, {
         name: 'stream',
         notificationsPort: 9001
