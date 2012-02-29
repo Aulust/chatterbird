@@ -1,5 +1,3 @@
-var Protocol = require('../client/protocol');
-
 var Client = function(id, connection) {
   this.id = id;
   this.connection = connection;
@@ -7,8 +5,8 @@ var Client = function(id, connection) {
 
 module.exports = Client;
 
-Client.prototype.addMessage = function(queue, data) {
-  this.connection.write(JSON.stringify(Protocol.createReceiveResponseMessage(this.id, queue, Protocol.OK, data)));
+Client.prototype.addMessage = function(message) {
+  this.connection.write(message);
 };
 
 Client.prototype._delete = function() {

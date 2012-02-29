@@ -1,3 +1,4 @@
+var util = require("util");
 var Client = require('./client');
 var Protocol = require('../client/protocol');
 
@@ -10,14 +11,31 @@ var Engine = function(config, serverName) {
   for(var queue in this._config[serverName].queues) {
     var queueConfig = this._config[serverName].queues[queue];
     var Queue = require('./queues/' + queueConfig.name);
-    this._queues[queueConfig.name] = new Queue(this, queueConfig);
+    this.initQueue(Queue, queueConfig.name, this);
+
+    this._queues[queueConfig.name] = new Queue(queueConfig);
   }
 };
 
 module.exports = Engine;
 
+Engine.prototype.initQueue = function(Queue, queueName, engine) {
+  var queueModule = require('./modules/queue');
+
+  for (var method in queueModule.prototype) {
+    Queue.prototype[method] = queueModule.prototype[method];
+  }
+
+  Queue.prototype._queueName = queueName;
+  Queue.prototype._engine = engine;
+};
+
 Engine.prototype.createClient = function(clientId, connection) {
   this._clients[clientId] = new Client(clientId, connection);
+};
+
+Engine.prototype.getClient = function(clientId) {
+  return this._clients[clientId];
 };
 
 Engine.prototype.deleteClient = function(clientId) {
@@ -26,7 +44,7 @@ Engine.prototype.deleteClient = function(clientId) {
   }
 
   for(var queue in this._queues) {
-    this._queues[queue].unsubscribe(this._clients[clientId]);
+    this._queues[queue].unsubscribe(clientId);
   }
 
   this._clients[clientId]._delete();
@@ -43,5 +61,5 @@ Engine.prototype.subscribe = function(clientId, queue, params) {
     return [Protocol.QUEUE_NOT_FOUND, null];
   }
 
-  return this._queues[queue].subscribe(this._clients[clientId], params);
+  return this._queues[queue].subscribe(clientId, params);
 };

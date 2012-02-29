@@ -1,7 +1,6 @@
 var fs = require('fs');
 
-var Admin = function(engine, config) {
-  this._engine = engine;
+var Admin = function(config) {
   this._config = config;
   this._clients = {};
 
@@ -19,15 +18,13 @@ Admin.prototype._getSystemData = function() {
       'queues': Object.keys(self._engine._queues)
     };
 
-    for(var client in self._clients) {
-      self._clients[client].addMessage('admin', data);
-    }
+    self.deliverMessage(self._clients, data)
   };
 
   var writeToFiles = function() {
     var data = Object.keys(self._engine._clients).length;
 
-    var stream = fs.createWriteStream(this._config.statFile);
+    var stream = fs.createWriteStream(self._config.statFile);
     stream.once('open', function() {
       stream.write(data);
     });
@@ -39,12 +36,12 @@ Admin.prototype._getSystemData = function() {
   setInterval(writeToFiles, 120000);
 };
 
-Admin.prototype.subscribe = function(client, params) {
-  this._clients[client.id] = client;
+Admin.prototype.subscribe = function(clientId, params) {
+  this._clients[clientId] = '';
 
   return [200, null];
 };
 
-Admin.prototype.unsubscribe = function(client) {
-  delete this._clients[client.id];
+Admin.prototype.unsubscribe = function(clientId) {
+  delete this._clients[clientId];
 };

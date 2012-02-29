@@ -16,7 +16,7 @@ Protocol.createMessage = function(action) {
   };
 };
 
-Protocol.createReceiveResponseMessage = function(id, queue, status, data) {
+Protocol.createReceiveResponseMessage = function(queue, status, data) {
   var message = this.createMessage('receive');
   message.queue = queue;
   message.status = status;

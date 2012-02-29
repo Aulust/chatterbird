@@ -62,14 +62,14 @@ Connection.prototype.connect = function() {
 
     this.transport.onopen = function() {
       self._connected();
-    }
+    };
     this.transport.onmessage = function(message) {
       var data = JSON.parse(message.data);
       self._handle(data);
-    }
+    };
     this.transport.onclose = function() {
       self._reconnect();
-    }
+    };
   }
 };
 

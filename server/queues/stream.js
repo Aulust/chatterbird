@@ -1,5 +1,4 @@
-var Stream = function(engine, config) {
-  this._engine = engine;
+var Stream = function(config) {
   this._config = config;
   this._clients = {};
 
@@ -18,9 +17,7 @@ var Stream = function(engine, config) {
           res.writeHead(200, {'Content-Type': 'text/plain'});
           res.end();
 
-          for(var client in self._clients) {
-            self._clients[client].addMessage('stream', message);
-          }
+          self.deliverMessage(self._clients, message);
         }
         catch(e) {}
       });
@@ -33,14 +30,14 @@ var Stream = function(engine, config) {
 
 module.exports = Stream;
 
-Stream.prototype.subscribe = function(client, params) {
-  this._clients[client.id] = client;
+Stream.prototype.subscribe = function(clientId, params) {
+  this._clients[clientId] = '';
 
   return [200, null];
 };
 
-Stream.prototype.unsubscribe = function(client) {
-  delete this._clients[client.id];
+Stream.prototype.unsubscribe = function(clientId) {
+  delete this._clients[clientId];
 };
 
 function waitForPostData(request, callback) {
