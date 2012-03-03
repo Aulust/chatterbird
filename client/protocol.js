@@ -31,10 +31,17 @@ Protocol.createSubscribeMessage = function(queue, params) {
   return message;
 };
 
-Protocol.createSubscribeResponseMessage = function(id, queue, status, params) {
-  var message = this.createMessage(id, 'subscribed');
+Protocol.createSubscribeResponseMessage = function(queue, status, params) {
+  var message = this.createMessage('subscribed');
   message.queue = queue;
   message.status = status;
   message.params = params;
+  return message;
+};
+
+Protocol.createPublishMessage = function(queue, data) {
+  var message = this.createMessage('publish');
+  message.queue = queue;
+  message.data = data;
   return message;
 };

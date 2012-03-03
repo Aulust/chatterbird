@@ -33,6 +33,9 @@ Sockjs.prototype.init = function() {
         if(action === 'subscribe') {
           self.subscribe(conn.id, message.queue, message.params);
         }
+        if(action === 'publish')  {
+          self.publish(conn.id, message.queue, message.data);
+        }
       } catch(e) {}
     });
     conn.on('close', function() {
@@ -49,6 +52,10 @@ Sockjs.prototype.disconnect = function(clientId) {
   this.engine.deleteClient(clientId);
 };
 
-Sockjs.prototype.subscribe = function(clientId, queue, params) {
-  this.engine.subscribe(clientId, queue, params);
+Sockjs.prototype.subscribe = function(clientId, queue, data) {
+  this.engine.subscribe(clientId, queue, data);
+};
+
+Sockjs.prototype.publish = function(clientId, queue, data) {
+  this.engine.publish(clientId, queue, data);
 };

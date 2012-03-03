@@ -28,8 +28,6 @@ Admin.prototype._getSystemData = function() {
     stream.once('open', function() {
       stream.write(data);
     });
-
-    stream.end();
   };
 
   setInterval(timerFunction, 4000);
@@ -44,4 +42,7 @@ Admin.prototype.subscribe = function(clientId, params) {
 
 Admin.prototype.unsubscribe = function(clientId) {
   delete this._clients[clientId];
+};
+
+Admin.prototype.publish = function(clientId, data) {
 };

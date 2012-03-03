@@ -9,3 +9,7 @@ Socket.prototype.connect = function(data) {
   this.connectionParams = data;
   this._connection.connectSocket(this);
 };
+
+Socket.prototype.send = function(data) {
+  this._connection.send(this._queue, data);
+};

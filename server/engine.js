@@ -57,9 +57,21 @@ Engine.prototype.clientExist = function(clientId) {
 };
 
 Engine.prototype.subscribe = function(clientId, queue, params) {
+  var result;
+
   if(!(queue in this._queues)) {
-    return [Protocol.QUEUE_NOT_FOUND, null];
+    result = [Protocol.QUEUE_NOT_FOUND, null];
   }
 
-  return this._queues[queue].subscribe(clientId, params);
+  result = this._queues[queue].subscribe(clientId, params);
+
+  this._clients[clientId].addMessage(JSON.stringify(Protocol.createSubscribeResponseMessage(queue, result[0], result[1])));
+};
+
+Engine.prototype.publish = function(clientId, queue, data) {
+  if(!this.clientExist(clientId) || !(queue in this._queues)) {
+    return;
+  }
+
+  this._queues[queue].publish(clientId, data);
 };

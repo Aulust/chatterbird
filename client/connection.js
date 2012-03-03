@@ -77,6 +77,10 @@ Connection.prototype.subscribe = function(queue, params) {
   this.transport.send(JSON.stringify(Protocol.createSubscribeMessage(queue, params)));
 };
 
+Connection.prototype.send = function(queue, data) {
+  this.transport.send(JSON.stringify(Protocol.createPublishMessage(queue, data)));
+};
+
 Connection.prototype._connected = function() {
   this.state = Connection.OPEN;
   this._updateSubscriptions();

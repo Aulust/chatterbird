@@ -10,6 +10,9 @@
 
     socket.onopen = function(params) {
       console.log('open');
+      setInterval(function() {
+        socket.send({'ddfdf':'sddddd'});
+      }, 1000);
     };
     socket.onerror = function(e) {
       console.log('error');

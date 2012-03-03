@@ -50,4 +50,7 @@ function waitForPostData(request, callback) {
   request.addListener('end', function() {
     callback(_content);
   });
-}
+};
+
+Stream.prototype.publish = function(clientId, data) {
+};
