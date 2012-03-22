@@ -3,10 +3,10 @@ var servers = {
     address: 'http://sc2tv.ru/notifications',
     port: 8080,
     queues: [
-      /*{
+      {
         name: 'admin',
         statFile: '/tmp/nodestat'
-      },*/ {
+      }, {
         name: 'notifications',
         notificationsPort: 9001
       }
