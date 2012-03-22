@@ -122,6 +122,7 @@ Connection.prototype._reconnect = function() {
   this.state = Connection.CLOSED;
   delete this.transport;
   for(var queue in this._queues) {
+    this._queues[queue].socket.onerror();
     if(this._queues[queue].status !== Connection.BROKEN) {
       this._queues[queue].status = Connection.DELAY;
     }

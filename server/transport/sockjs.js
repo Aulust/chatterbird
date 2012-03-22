@@ -5,9 +5,14 @@ var Sockjs = function(httpServer, engine) {
   this.engine = engine;
 
   var sockjs_opts = {
-    sockjs_url: "http://sc2tv.ru/sockjs-0.2.1.min.js",
+    sockjs_url: "http://sc2tv.ru/sites/all/themes/sc2tv/js/sockjs-0.2.1.min.js",
     websocket: false,
-    jsessionid: false
+    jsessionid: false,
+    log: function(severity, message) {
+      if(severity === 'error') {
+        console.log(message);
+      }
+    }
   };
 
   this.sockjsServer = sockjs.createServer(sockjs_opts);

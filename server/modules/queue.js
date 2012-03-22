@@ -6,13 +6,13 @@ var Queue = function() {
 module.exports = Queue;
 
 Queue.prototype.deliverMessage = function(clients, data) {
-  var message = JSON.stringify(Protocol.createReceiveResponseMessage(this._queueName, Protocol.OK, data));
+  var message = JSON.stringify(Protocol.createReceiveResponseMessage(this.queueName, Protocol.OK, data));
   var type = Object.prototype.toString.call(clients);
   var client = null;
 
   if(type === '[object Object]') {
     for(var clientId in clients) {
-      client = this._engine.getClient(clientId);
+      client = this.engine.getClient(clientId);
       if(client) client.addMessage(message);
     }
   }

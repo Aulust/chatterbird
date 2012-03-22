@@ -1,4 +1,4 @@
-var util = require("util");
+var utils = require("./utils");
 var Client = require('./client');
 var Protocol = require('../client/protocol');
 
@@ -11,7 +11,7 @@ var Engine = function(config, serverName) {
   for(var queue in this._config[serverName].queues) {
     var queueConfig = this._config[serverName].queues[queue];
     var Queue = require('./queues/' + queueConfig.name);
-    this.initQueue(Queue, queueConfig.name, this);
+    this.initQueue(Queue, queueConfig.name, this, utils);
 
     this._queues[queueConfig.name] = new Queue(queueConfig);
   }
@@ -19,15 +19,16 @@ var Engine = function(config, serverName) {
 
 module.exports = Engine;
 
-Engine.prototype.initQueue = function(Queue, queueName, engine) {
+Engine.prototype.initQueue = function(Queue, queueName, engine, utils) {
   var queueModule = require('./modules/queue');
 
   for (var method in queueModule.prototype) {
     Queue.prototype[method] = queueModule.prototype[method];
   }
 
-  Queue.prototype._queueName = queueName;
-  Queue.prototype._engine = engine;
+  Queue.prototype.queueName = queueName;
+  Queue.prototype.engine = engine;
+  Queue.prototype.utils = utils;
 };
 
 Engine.prototype.createClient = function(clientId, connection) {

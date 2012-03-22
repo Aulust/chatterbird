@@ -4,8 +4,13 @@ var Core = function() {
 };
 
 Core.prototype._getConfiguration = function() {
-  var data = this.getCookie('ttt');
-  var config = JSON.parse('{"node1":{"address":"http://localhost:8080","queues":["admin","stream"]}}');
+  var data = this.getCookie('nodeConfig');
+
+  if(!data) {
+    return null;
+  }
+
+  var config = JSON.parse(decodeURIComponent(data));
 
   for(var server in this._servers) {
     if(typeof(server.address) != 'string' || !(server.queues instanceof Array)) {
