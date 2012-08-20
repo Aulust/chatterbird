@@ -1,5 +1,5 @@
 PREFIX = .
-DIST_DIR = ${PREFIX}/build
+DIST_DIR = ${PREFIX}/test
 SRC_DIR = client
 
 MQ = ${DIST_DIR}/chatterbird.js

@@ -1,27 +1,31 @@
 var Core = function() {
-  this._connections = {};
-  this._servers = this._getConfiguration();
+    this._connection = null;
+    this._servers = this._getConfiguration();
+    this._queues = [];
+
+    this._connect();
 };
 
 Core.prototype._getConfiguration = function() {
-  var data = this.getCookie('nodeConfig');
+    var data = this._getCookie('nodeConfig');
 
-  if(!data) {
-    return null;
-  }
-
-  var config = JSON.parse(decodeURIComponent(data));
-
-  for(var server in this._servers) {
-    if(typeof(server.address) != 'string' || !(server.queues instanceof Array)) {
+    if(!data) {
         return null;
     }
-  }
 
-  return config;
+    var config = JSON.parse(decodeURIComponent(data));
+    var servers = {};
+
+    /*for(var server in config) {
+        if(typeof(server) === 'string') {
+            servers[server] = { status: 'normal' };
+        }
+    }*/
+
+    return config;
 };
 
-Core.prototype.getCookie = function(name) {
+Core.prototype._getCookie = function(name) {
   var nameEQ = name + "=";
   var ca = document.cookie.split(';');
 
@@ -34,27 +38,28 @@ Core.prototype.getCookie = function(name) {
   return null;
 };
 
-Core.prototype.getConnection = function(socket) {
-  var queue = socket._queue;
-  var queueServers = [];
-  var i;
+Core.prototype._connect = function() {
+    console.log(this._servers[0]);
+    this.connection = new SockJS(this._servers[0]);
 
-  for(var server in this._servers) {
-    for(i=0; i<this._servers[server].queues.length; i++) {
-      if(this._servers[server].queues[i] === queue) {
-        queueServers.push(server);
-      }
-    }
-  }
+    this.connection.onopen = this._connected.bind(this);
+    this.connection.onmessage = this._handle.bind(this);
+    this.connection.onclose = function(a) {
+        console.log('error');
+        console.log(a);
+    };
+};
 
-  for(i=0; i<queueServers.length; i++) {
-    if(queueServers[i] in this._connections) {
-      return this._connections[queueServers[i]];
-    }
-  }
+Core.prototype._connected = function() {
+    console.log('sdfdfd');
+};
 
-  var rand = Math.floor(Math.random()*queueServers.length);
-  this._connections[queueServers[rand]] = new Connection(this._servers[queueServers[rand]].address);
+Core.prototype._handle = function(a) {
+    console.log(a);
+};
 
-  return this._connections[queueServers[rand]];
+Core.prototype.register = function(socket) {
+    this._queues[socket._queue] = {};
+    this._queues[socket._queue].socket = socket;
+    this._queues[socket._queue].status = Connection.CLOSED;
 };

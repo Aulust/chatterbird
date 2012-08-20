@@ -1,12 +1,13 @@
 var Connection = function(endpoint) {
-  this.id = null;
-  this.state = Connection.CLOSED;
-  this.protocol = Protocol;
-  this.messages = [];
-  this._queues = {};
-  this._endpoint = endpoint;
+    this.id = null;
+    this.state = Connection.CONNECTING;
+    this.protocol = Protocol;
+    //this.messages = [];
+    //this._queues = {};
+    this._endpoint = endpoint;
 
-  this.connect();
+    this.state = Connection.CONNECTING;
+
 };
 
 Connection.CONNECTING = 0; //Connection message was sent
@@ -17,9 +18,9 @@ Connection.BROKEN = 4; //Backend broken, reconnect not possible
 Connection.CLOSED = 5; //Not connected yet or connection was closed manually
 
 Connection.prototype.addSocket = function(socket) {
-  this._queues[socket._queue] = {};
-  this._queues[socket._queue].socket = socket;
-  this._queues[socket._queue].status = Connection.CLOSED;
+    this._queues[socket._queue] = {};
+    this._queues[socket._queue].socket = socket;
+    this._queues[socket._queue].status = Connection.CLOSED;
 };
 
 Connection.prototype.connectSocket = function(socket) {
@@ -51,26 +52,6 @@ Connection.prototype._handle = function(message) {
     this._subscribed(message.queue, message.status, message.params);
   if(action === 'receive')
     this._received(message.queue, message.status, message.data);
-};
-
-Connection.prototype.connect = function() {
-  if(this.state === Connection.CLOSED) {
-    this.state = Connection.CONNECTING;
-    this.transport = new SockJS(this._endpoint);
-
-    var self = this;
-
-    this.transport.onopen = function() {
-      self._connected();
-    };
-    this.transport.onmessage = function(message) {
-      var data = JSON.parse(message.data);
-      self._handle(data);
-    };
-    this.transport.onclose = function() {
-      self._reconnect();
-    };
-  }
 };
 
 Connection.prototype.subscribe = function(queue, params) {
