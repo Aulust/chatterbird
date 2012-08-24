@@ -1,6 +1,8 @@
 var Core = function() {
     this._connection = null;
     this._servers = this._getConfiguration();
+    this._numServers = this._servers.length;
+    this._serverId = Math.random();
     this._queues = [];
 
     this._connect();
@@ -13,41 +15,29 @@ Core.prototype._getConfiguration = function() {
         return null;
     }
 
-    var config = JSON.parse(decodeURIComponent(data));
-    var servers = {};
-
-    /*for(var server in config) {
-        if(typeof(server) === 'string') {
-            servers[server] = { status: 'normal' };
-        }
-    }*/
-
-    return config;
+    return JSON.parse(decodeURIComponent(data));
 };
 
 Core.prototype._getCookie = function(name) {
-  var nameEQ = name + "=";
-  var ca = document.cookie.split(';');
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
 
-  for(var i = 0; i < ca.length; i++) {
-    var c = ca[i];
-    while (c.charAt(0)==' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
-  }
+    for(var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+    }
 
-  return null;
+    return null;
 };
 
 Core.prototype._connect = function() {
-    console.log(this._servers[0]);
-    this.connection = new SockJS(this._servers[0]);
+    var serverId = (this._serverId + 1) % this._numServers;
+    this._connection = new SockJS(serverId);
 
-    this.connection.onopen = this._connected.bind(this);
-    this.connection.onmessage = this._handle.bind(this);
-    this.connection.onclose = function(a) {
-        console.log('error');
-        console.log(a);
-    };
+    this._connection.onopen = this._connected.bind(this);
+    this._connection.onmessage = this._handle.bind(this);
+    this._connection.onclose = this._close.bind(this);
 };
 
 Core.prototype._connected = function() {
@@ -58,8 +48,12 @@ Core.prototype._handle = function(a) {
     console.log(a);
 };
 
+Core.prototype._close = function(a) {
+    this._connection = null;
+    
+    this._connect();
+};
+
 Core.prototype.register = function(socket) {
-    this._queues[socket._queue] = {};
-    this._queues[socket._queue].socket = socket;
-    this._queues[socket._queue].status = Connection.CLOSED;
+    this._queues[socket._queue] = socket;
 };
