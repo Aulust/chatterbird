@@ -24,7 +24,7 @@ server.addListener('upgrade', function(req,res){
     res.end();
 });
 
-sockjs_echo.installHandlers(server, {prefix:'/echo', websocket: false});
+sockjs_echo.installHandlers(server, {prefix:'/node', websocket: false});
 
-console.log(' [*] Listening on 0.0.0.0:9999' );
-server.listen(9999, '0.0.0.0');
+console.log(' [*] Listening on 0.0.0.0:10000' );
+server.listen(10000, '0.0.0.0');

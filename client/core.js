@@ -2,10 +2,15 @@ var Core = function() {
     this._connection = null;
     this._servers = this._getConfiguration();
     this._numServers = this._servers.length;
-    this._serverId = Math.random();
+    this._serverId = this._getRand(this._numServers);
     this._queues = [];
 
     this._connect();
+    /*setInterval(function() {
+        if(this._connection !== null) {
+            this._connection.send('Yes we nya!');
+        }
+    }.bind(this), 10000);*/
 };
 
 Core.prototype._getConfiguration = function() {
@@ -31,9 +36,13 @@ Core.prototype._getCookie = function(name) {
     return null;
 };
 
+Core.prototype._getRand = function(max) {
+    return Math.floor(Math.random() * max);
+};
+
 Core.prototype._connect = function() {
-    var serverId = (this._serverId + 1) % this._numServers;
-    this._connection = new SockJS(serverId);
+    this._serverId = (this._serverId + 1) % this._numServers;
+    this._connection = new SockJS(this._servers[this._serverId], null, {debug: true, protocols_whitelist: ['xdr-polling', 'xhr-polling']});
 
     this._connection.onopen = this._connected.bind(this);
     this._connection.onmessage = this._handle.bind(this);
@@ -50,8 +59,14 @@ Core.prototype._handle = function(a) {
 
 Core.prototype._close = function(a) {
     this._connection = null;
-    
-    this._connect();
+    for(var i = 0; i< this._queues.length; i++) {
+        this._queues[i].onclose();
+        delete this._queues[i];
+    }
+
+    console.log(a);
+
+    //this._connect();
 };
 
 Core.prototype.register = function(socket) {
