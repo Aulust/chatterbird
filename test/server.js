@@ -10,6 +10,9 @@ sockjs_echo.on('connection', function(conn) {
     conn.on('data', function(message) {
         conn.write(message);
     });
+     conn.on('close', function() {
+         console.log('exit');
+     });
 });
 
 // 2. Static files server
