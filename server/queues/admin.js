@@ -1,54 +1,51 @@
 var fs = require('fs');
+var util = require("util");
+var events = require("events");
 
+/*
+ * This is special queue with access to server internals
+ */
 var Admin = function(config) {
-  this._config = config;
-  this._clients = {};
+    this._config = config;
+    this._clients = {};
 
-  this._getSystemData();
+    this.on('subscribe', this.subscribe.bind(this));
+    this.on('unsubscribe', this.unsubscribe.bind(this));
+
+    setInterval(this._publishInfo.bind(this), 4000);
 };
 
 module.exports = Admin;
 
+util.inherits(Admin, events.EventEmitter);
+
 Admin.prototype._getSystemData = function() {
-  var self = this;
-  var timerFunction = function() {
-    var data = {
-      'name': self.engine._name,
-      'connectedClients': Object.keys(self.engine._clients).length,
-      'queues': Object.keys(self.engine._queues)
-    };
-
-    self.deliverMessage(self._clients, data)
-  };
-
-  var writeToFiles = function() {
+  /*var writeToFiles = function() {
     var data = Object.keys(self.engine._clients).length;
 
     var stream = fs.createWriteStream(self._config.statFile);
     stream.once('open', function() {
       stream.write(data);
     });
-  };
+  };*/
 
-  setInterval(timerFunction, 4000);
-  setInterval(writeToFiles, 120000);
+  //setInterval(writeToFiles, 120000);
 };
 
-Admin.prototype.subscribe = function(clientId, params) {
-  this._clients[clientId] = '';
-
-  this.dddf();
-
-  return [200, null];
-};
-
-Admin.prototype.dddf = function() {
-    conslole.log('dfsdf');
+Admin.prototype.subscribe = function(clientId) {
+    this._clients[clientId] = '';
 };
 
 Admin.prototype.unsubscribe = function(clientId) {
-  delete this._clients[clientId];
+    delete this._clients[clientId];
 };
 
-Admin.prototype.publish = function(clientId, data) {
+Admin.prototype._publishInfo = function() {
+    var data = {
+        'sessions': Object.keys(this._transport._sessions),
+        'queues': Object.keys(this._engine._queues),
+        'clientsInfo': this._engine._clientQueues
+    };
+
+    this.emit('publish', this._clients, data);
 };

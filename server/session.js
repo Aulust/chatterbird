@@ -29,6 +29,16 @@ Session.prototype.heartbeat = function() {
     this._sendFrame('h');
 };
 
+Session.prototype.send = function(data) {
+    if (this._status !== OPEN)
+        return;
+
+    this._buffer.push('' + data);
+    if (this.res) {
+        this._sendBuffer();
+    }
+};
+
 Session.prototype._sendFrame = function(frame) {
     try {
         this.res.write(frame + '\n');
@@ -39,7 +49,10 @@ Session.prototype._sendFrame = function(frame) {
 };
 
 Session.prototype._sendBuffer = function() {
-    
+    if(this._buffer.length > 0) {
+        this._sendFrame('a' + '[' + this._buffer.join(',') + ']');
+        this._buffer = [];
+    }
 };
 
 Session.prototype._close = function() {

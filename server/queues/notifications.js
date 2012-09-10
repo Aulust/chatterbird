@@ -1,10 +1,12 @@
-var amanda = require('amanda');
+var util = require("util");
+var events = require("events");
+//var amanda = require('amanda');
 
 var Notifications = function(config) {
   this._config = config;
   this._clients = {};
 
-  this.http = require('http');
+/*  this.http = require('http');
 
   var self = this;
 
@@ -27,11 +29,14 @@ var Notifications = function(config) {
       res.writeHead(200, {'Content-Type': 'text/plain'});
       res.end();
     }
-  }).listen(config.notificationsPort, "127.0.0.1");
+  }).listen(config.notificationsPort, "127.0.0.1");*/
 };
 
 module.exports = Notifications;
 
+util.inherits(Notifications, events.EventEmitter);
+
+/*
 Notifications.prototype.subscribe = function(clientId) {
   this._clients[clientId] = '';
 
@@ -130,3 +135,4 @@ Notifications.prototype.streamScheme = {
     }
   }
 };
+*/

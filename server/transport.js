@@ -1,6 +1,7 @@
 var Session = require('./session');
 
-var Transport = function() {
+var Transport = function(engine) {
+    this._engine = engine;
     this._sessions = {};
 
     this._router = {
@@ -8,14 +9,12 @@ var Transport = function() {
             'info': '_options'
         },
         'POST': {
-            'xhr': '_xhr'
+            'xhr': '_xhr',
+            'xhr_send': '_xhr_send'
         }
     };
 
     setInterval(this._maintains.bind(this), 15000);
-    setInterval(function() {
-        console.log(Object.keys(this._sessions));
-    }.bind(this), 1000);
 };
 
 module.exports = Transport;
@@ -24,12 +23,23 @@ Transport.prototype.register = function(server) {
     server.addListener('request', this.handle.bind(this));
 };
 
+Transport.prototype.send = function(sessionIds, data) {
+    var message = JSON.stringify(data);
+    var type = Object.prototype.toString.call(sessionIds);
+
+    if(type === '[object Object]') {
+        for(var sessionId in sessionIds) {
+            this._sessions[sessionId].send(message);
+        }
+    }
+};
+
 Transport.prototype.handle = function(request, response) {
     var params = this._parseRequest(request.url);
 
     if(this._router[request.method]) {
         if(this._router[request.method][params.method]) {
-            return this[this._router[request.method][params.method]](params, response);
+            return this[this._router[request.method][params.method]](params, response, request);
         }
     }
 
@@ -41,7 +51,7 @@ Transport.prototype._parseRequest = function(url) {
     var length = params.length;
 
     return {
-        clientId: params[length - 2],
+        sessionId: params[length - 2],
         method: params[length - 1]
     };
 };
@@ -65,11 +75,32 @@ Transport.prototype._xhr = function(params, response) {
     response.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
     response.writeHead(200);
 
-    if(!(params.clientId in this._sessions)) {
-        this._sessions[params.clientId] = new Session();
+    if(!(params.sessionId in this._sessions)) {
+        this._sessions[params.sessionId] = new Session();
+        this._engine.createClient(params.sessionId);
     }
 
-    this._sessions[params.clientId].register(response);
+    this._sessions[params.sessionId].register(response);
+};
+
+Transport.prototype._xhr_send = function(params, response, request) {
+    var body = '';
+
+    request.on('data', function (data) {
+        body += data;
+    });
+    request.on('end', function () {
+        if(params.sessionId in this._sessions) {
+            try {
+                JSON.parse(body).forEach(function(message) {
+                    this._engine.message(params.sessionId, JSON.parse(message));
+                }, this);
+            } catch (e) {}
+        }
+
+        response.writeHead(200);
+        response.end();
+    }.bind(this));
 };
 
 Transport.prototype._maintains = function() {
@@ -84,6 +115,7 @@ Transport.prototype._maintains = function() {
             } else {
                 session.destroy();
                 delete this._sessions[sessionId];
+                this._engine.deleteClient(sessionId);
             }
         }
     }

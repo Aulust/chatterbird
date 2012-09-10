@@ -1,78 +1,67 @@
-var utils = require("./utils");
-var Client = require('./client');
-var Protocol = require('../client/protocol');
+var fs = require('fs');
 
-var Engine = function(config, serverName) {
-  this._name = serverName;
-  this._config = config;
-  this._clients = {};
-  this._queues = {};
+var Transport = require('./transport');
 
-  for(var queue in this._config[serverName].queues) {
-    var queueConfig = this._config[serverName].queues[queue];
-    var Queue = require('./queues/' + queueConfig.name);
-    this.initQueue(Queue, queueConfig.name, this, utils);
+var Engine = function(config) {
+    this._clientQueues = {};
+    this._queues = {};
+    this._transport = new Transport(this);
 
-    this._queues[queueConfig.name] = new Queue(queueConfig);
-  }
+    fs.readdirSync('./queues').forEach(function (queue) {
+        var queueName = queue.slice(0, queue.length - 3);
+        var Queue = require('./queues/' + queueName);
+
+        this._queues[queueName] = new Queue(config.queues[queueName]);
+        this._queues[queueName].on('publish', this.publish.bind(this, queueName));
+    }, this);
+
+    this._queues['admin']._engine = this;
+    this._queues['admin']._transport = this._transport;
 };
 
 module.exports = Engine;
 
-Engine.prototype.initQueue = function(Queue, queueName, engine, utils) {
-  var queueModule = require('./modules/queue');
-
-  for (var method in queueModule.prototype) {
-    Queue.prototype[method] = queueModule.prototype[method];
-  }
-
-  Queue.prototype.queueName = queueName;
-  Queue.prototype.engine = engine;
-  Queue.prototype.utils = utils;
+Engine.prototype.register = function(server) {
+    this._transport.register(server);
 };
 
-Engine.prototype.createClient = function(clientId, connection) {
-  this._clients[clientId] = new Client(clientId, connection);
-};
-
-Engine.prototype.getClient = function(clientId) {
-  return this._clients[clientId];
+Engine.prototype.createClient = function(clientId) {
+    this._clientQueues[clientId] = [];
 };
 
 Engine.prototype.deleteClient = function(clientId) {
-  if(!this.clientExist(clientId)) {
-    return;
-  }
+    if(!this._clientQueues[clientId]) {
+        return;
+    }
 
-  for(var queue in this._queues) {
-    this._queues[queue].unsubscribe(clientId);
-  }
+    this._clientQueues[clientId].forEach(function(queue) {
+        this._queues[queue].emit('unsubscribe', clientId);
+    }, this);
 
-  this._clients[clientId]._delete();
-
-  delete this._clients[clientId];
+    delete this._clientQueues[clientId];
 };
 
-Engine.prototype.clientExist = function(clientId) {
-  return this._clients.hasOwnProperty(clientId);
+Engine.prototype.message = function(clientId, data) {
+    if(!this._clientQueues[clientId]) {
+        return;
+    }
+
+    if(this._validateMessage(data)) {
+        if(this._clientQueues[clientId].indexOf(data.queue) == -1) {
+            this._queues[data.queue].emit('subscribe', clientId);
+            this._clientQueues[clientId].push(data.queue);
+        }
+
+        this._queues[data.queue].emit('message', data.message);
+    }
 };
 
-Engine.prototype.subscribe = function(clientId, queue, params) {
-  var result;
-
-  if(!(queue in this._queues)) {
-    result = [Protocol.QUEUE_NOT_FOUND, null];
-  }
-
-  result = this._queues[queue].subscribe(clientId, params);
-
-  this._clients[clientId].addMessage(JSON.stringify(Protocol.createSubscribeResponseMessage(queue, result[0], result[1])));
+Engine.prototype.publish = function(queue, clients, message) {
+    this._transport.send(clients, {queue: queue, message: message});
 };
 
-Engine.prototype.publish = function(clientId, queue, data) {
-  if(!this.clientExist(clientId) || !(queue in this._queues)) {
-    return;
-  }
-
-  this._queues[queue].publish(clientId, data);
+Engine.prototype._validateMessage = function(data) {
+    return Object.prototype.toString.call(data) === "[object Object]" &&
+        data.hasOwnProperty('queue') && data.hasOwnProperty('message') &&
+        this._queues.hasOwnProperty(data.queue);
 };

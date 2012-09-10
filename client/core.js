@@ -1,16 +1,12 @@
 var Core = function() {
     this._connection = null;
+    this._connectStaus = false;
     this._servers = this._getConfiguration();
     this._numServers = this._servers.length;
     this._serverId = this._getRand(this._numServers);
-    this._queues = [];
+    this._queues = {};
 
     this._connect();
-    /*setInterval(function() {
-        if(this._connection !== null) {
-            this._connection.send('Yes we nya!');
-        }
-    }.bind(this), 10000);*/
 };
 
 Core.prototype._getConfiguration = function() {
@@ -50,25 +46,46 @@ Core.prototype._connect = function() {
 };
 
 Core.prototype._connected = function() {
-    console.log('sdfdfd');
+    this._connectStaus = true;
 };
 
-Core.prototype._handle = function(a) {
-    console.log(a);
+Core.prototype._handle = function(data) {
+    var queue = data.data.queue;
+    var message = data.data.message;
+
+    if(this._queues.hasOwnProperty(queue)) {
+        this._queues[queue].onmessage(message);
+    }
 };
 
-Core.prototype._close = function(a) {
+Core.prototype._close = function() {
     this._connection = null;
-    for(var i = 0; i< this._queues.length; i++) {
-        this._queues[i].onclose();
-        delete this._queues[i];
+    for(var queue in this._queues) {
+        queue.onclose();
+        delete this._queues[queue];
     }
 
-    console.log(a);
-
+    this._connectStaus = false;
     //this._connect();
 };
 
 Core.prototype.register = function(socket) {
-    this._queues[socket._queue] = socket;
+    this._queues[socket.queue] = socket;
+
+    var self = this;
+    var sendConnect = function() {
+        if(self._connectStaus) {
+            self._connection.send(JSON.stringify({queue: socket.queue, message: ''}));
+        } else {
+            setTimeout(sendConnect, 500);
+        }
+    };
+
+    sendConnect();
+};
+
+Core.prototype.send = function(socket, message) {
+    if(self._connectStaus) {
+        self._connection.send(JSON.stringify({queue: socket.queue, message: message}));
+    }
 };
