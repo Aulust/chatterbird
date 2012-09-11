@@ -1,7 +1,7 @@
 var Core = function() {
     this._connection = null;
-    this._connectStaus = false;
-    this._servers = this._getConfiguration();
+    this._connectStatus = false;
+    this._servers = nodeConfig//this._getConfiguration();
     this._numServers = this._servers.length;
     this._serverId = this._getRand(this._numServers);
     this._queues = {};
@@ -38,7 +38,7 @@ Core.prototype._getRand = function(max) {
 
 Core.prototype._connect = function() {
     this._serverId = (this._serverId + 1) % this._numServers;
-    this._connection = new SockJS(this._servers[this._serverId], null, {debug: true, protocols_whitelist: ['xdr-polling', 'xhr-polling']});
+    this._connection = new SockJS(this._servers[this._serverId], null, {protocols_whitelist: ['xdr-polling', 'xhr-polling']});
 
     this._connection.onopen = this._connected.bind(this);
     this._connection.onmessage = this._handle.bind(this);
@@ -46,7 +46,7 @@ Core.prototype._connect = function() {
 };
 
 Core.prototype._connected = function() {
-    this._connectStaus = true;
+    this._connectStatus = true;
 };
 
 Core.prototype._handle = function(data) {
@@ -54,19 +54,20 @@ Core.prototype._handle = function(data) {
     var message = data.data.message;
 
     if(this._queues.hasOwnProperty(queue)) {
-        this._queues[queue].onmessage(message);
+        this._queues[queue].emit('message', message);
     }
 };
 
 Core.prototype._close = function() {
     this._connection = null;
     for(var queue in this._queues) {
-        queue.onclose();
+        this._queues[queue].emit('close');
         delete this._queues[queue];
     }
 
-    this._connectStaus = false;
-    //this._connect();
+    this._connectStatus = false;
+
+    setTimeout(this._connect.bind(this), 2000)
 };
 
 Core.prototype.register = function(socket) {
@@ -74,8 +75,9 @@ Core.prototype.register = function(socket) {
 
     var self = this;
     var sendConnect = function() {
-        if(self._connectStaus) {
+        if(self._connectStatus) {
             self._connection.send(JSON.stringify({queue: socket.queue, message: ''}));
+            socket.emit('open');
         } else {
             setTimeout(sendConnect, 500);
         }
@@ -85,7 +87,7 @@ Core.prototype.register = function(socket) {
 };
 
 Core.prototype.send = function(socket, message) {
-    if(self._connectStaus) {
+    if(self._connectStatus) {
         self._connection.send(JSON.stringify({queue: socket.queue, message: message}));
     }
 };

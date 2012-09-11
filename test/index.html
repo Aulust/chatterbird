@@ -2,15 +2,15 @@
 <head>
 <title>debug</title>
   <script src="http://cdn.sockjs.org/sockjs-0.3.js"></script>
+  <script>
+      nodeConfig = ['http://localhost:9999/node'];
+  </script>
   <script src="chatterbird.js" type="text/javascript"></script>
   <script type="text/javascript">
     var socket = new Chatterbird('admin');
 
     socket.onopen = function(params) {
       console.log('open');
-    };
-    socket.onerror = function(e) {
-      console.log('error');
     };
     socket.onclose = function(e) {
         console.log('close');
