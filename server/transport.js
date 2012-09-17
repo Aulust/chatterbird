@@ -5,6 +5,10 @@ var Transport = function(engine) {
     this._sessions = {};
 
     this._router = {
+        'OPTIONS': {
+            'info': '_info_options',
+            'xhr_send': '_xhr_options'
+        },
         'GET': {
             'info': '_options'
         },
@@ -39,6 +43,14 @@ Transport.prototype.handle = function(request, response) {
 
     if(this._router[request.method]) {
         if(this._router[request.method][params.method]) {
+            var origin = (request.headers.origin || "*");
+            var headers = request.headers['access-control-request-headers'];
+
+            response.setHeader("Access-Control-Allow-Origin", origin);
+            response.setHeader("Access-Control-Allow-Credentials", true);
+            response.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST');
+            if (headers) response.setHeader('Access-Control-Allow-Headers', headers);
+
             return this[this._router[request.method][params.method]](params, response, request);
         }
     }
@@ -68,6 +80,19 @@ Transport.prototype._options = function(params, response) {
         websocket: false,
         cookie_needed: false
     }));
+    response.end();
+};
+
+Transport.prototype._info_options = function(params, response) {
+    response.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+    response.setHeader('Access-Control-Max-Age', response.cache_for);
+    response.writeHead(204);
+    response.end();
+};
+
+Transport.prototype._xhr_options = function(params, response) {
+    response.setHeader('Access-Control-Max-Age', response.cache_for);
+    response.writeHead(204);
     response.end();
 };
 

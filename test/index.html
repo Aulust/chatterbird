@@ -1,24 +1,24 @@
 <html>
 <head>
-<title>debug</title>
-  <script src="http://cdn.sockjs.org/sockjs-0.3.js"></script>
-  <script>
-      nodeConfig = ['http://localhost:9999/node'];
-  </script>
-  <script src="chatterbird.js" type="text/javascript"></script>
-  <script type="text/javascript">
-    var socket = new Chatterbird('admin');
+    <title>debug</title>
+    <script src="http://cdn.sockjs.org/sockjs-0.3.js"></script>
+    <script>
+        nodeConfig = ['http://localhost:10000/node'];
+    </script>
+    <script src="chatterbird.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var socket = new Chatterbird('admin');
 
-    socket.onopen = function(params) {
-      console.log('open');
-    };
-    socket.onclose = function(e) {
-        console.log('close');
-    };
-    socket.onmessage = function(message) {
-      console.log(message);
-    };
-  </script>
+        socket.onopen = function(params) {
+            console.log('open');
+        };
+        socket.onclose = function(e) {
+            console.log('close');
+        };
+        socket.onmessage = function(message) {
+            console.log(message);
+        };
+    </script>
 </head>
 <body>
 </body>

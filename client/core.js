@@ -58,7 +58,7 @@ Core.prototype._handle = function(data) {
     }
 };
 
-Core.prototype._close = function() {
+Core.prototype._close = function(e) {
     this._connection = null;
     for(var queue in this._queues) {
         this._queues[queue].emit('close');
@@ -67,7 +67,9 @@ Core.prototype._close = function() {
 
     this._connectStatus = false;
 
-    setTimeout(this._connect.bind(this), 2000)
+    if(e.code !== 2000) {
+        setTimeout(this._connect.bind(this), 2000);
+    }
 };
 
 Core.prototype.register = function(socket) {
