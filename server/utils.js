@@ -42,6 +42,5 @@ Utils.strip_tags = function(input, allowed) {
 };
 
 Utils.filter_text = function(text) {
-    var result = text.replace(/(\r\n|\n|\r)/gm," ");
-    result = result.replace(/\s+/g," ");
+    return text.replace(/(\r\n|\n|\r)/gm," ").replace(/\s+/g," ");
 };
