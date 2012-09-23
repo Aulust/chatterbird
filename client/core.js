@@ -38,7 +38,7 @@ Core.prototype._getRand = function(max) {
 
 Core.prototype._connect = function() {
     this._serverId = (this._serverId + 1) % this._numServers;
-    this._connection = new SockJS(this._servers[this._serverId], null, {protocols_whitelist: ['xdr-polling', 'xhr-polling']});
+    this._connection = new SockJS(this._servers[this._serverId], null, {protocols_whitelist: ['xdr-polling', 'xhr-polling', 'iframe-xhr-polling']});
 
     this._connection.onopen = this._connected.bind(this);
     this._connection.onmessage = this._handle.bind(this);

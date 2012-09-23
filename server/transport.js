@@ -10,7 +10,8 @@ var Transport = function(engine) {
             'xhr_send': '_xhr_options'
         },
         'GET': {
-            'info': '_options'
+            'info': '_options',
+            'iframe.html': '_iframe'
         },
         'POST': {
             'xhr': '_xhr',
@@ -126,6 +127,17 @@ Transport.prototype._xhr_send = function(params, response, request) {
         response.writeHead(200);
         response.end();
     }.bind(this));
+};
+
+Transport.prototype.iframe_template = '<!DOCTYPE html>' +
+'<html><head><meta http-equiv="X-UA-Compatible" content="IE=edge" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />' +
+'<script>document.domain = document.domain;_sockjs_onload = function(){SockJS.bootstrap_iframe();};</script>' +
+'<script src="http://cdn.sockjs.org/sockjs-0.3.js"></script>' +
+'</head><body><h2>Don\'t panic!</h2><p>This is a SockJS hidden iframe. It\'s used for cross domain magic.</p></body></html>';
+
+Transport.prototype._iframe = function(params, response, request) {
+    response.writeHead(200);
+    response.end(this.iframe_template);
 };
 
 Transport.prototype._maintains = function() {
