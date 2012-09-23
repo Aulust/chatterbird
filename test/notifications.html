@@ -11,7 +11,8 @@
                 var data = {
                     type: $('select[name=type]').val(),
                     description: {
-                        title: $('input[name=title]').val()
+                        title: $('input[name=title]').val(),
+                        teaser: $('input[name=teaser]').val()
                     },
                     casters: {
                         caster: $('input[name=caster]').val()
@@ -62,6 +63,8 @@
         </select>
         <br/>
         Title: <input type="text" name="title" />
+        <br/>
+        Teaser: <input type="text" name="teaser" />
         <br/>
         Caster: <input type="text" name="caster"/>
         <br/>
