@@ -40,3 +40,8 @@ Utils.strip_tags = function(input, allowed) {
         return allowed.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : '';
     });
 };
+
+Utils.filter_text = function(text) {
+    var result = text.replace(/(\r\n|\n|\r)/gm," ");
+    result = result.replace(/\s+/g," ");
+};

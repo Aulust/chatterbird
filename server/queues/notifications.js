@@ -41,8 +41,10 @@ Notifications.prototype.unsubscribe = function(clientId) {
 
 Notifications.prototype.processMessage = function(message) {
     message.description.title = Utils.strip_tags(message.description.title);
+    message.description.title = Utils.filter_text(message.description.title);
     if(message.description.teaser) {
         message.description.teaser = Utils.strip_tags(message.description.teaser);
+        message.description.teaser = Utils.filter_text(message.description.teaser);
     }
     if(message.description.game) {
         message.description.game = Utils.strip_tags(message.description.game);
