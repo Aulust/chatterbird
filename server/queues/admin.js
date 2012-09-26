@@ -1,10 +1,11 @@
-var fs = require('fs');
 var util = require("util");
 var events = require("events");
+var http = require('http');
+var url = require('url');
 
 /*
- * This is special queue with access to server internals
- */
+* This is special queue with access to server internals
+*/
 var Admin = function(config) {
     this._config = config;
     this._clients = {};
@@ -13,23 +14,30 @@ var Admin = function(config) {
     this.on('unsubscribe', this.unsubscribe.bind(this));
 
     setInterval(this._publishInfo.bind(this), 4000);
+    this._serve();
 };
 
 module.exports = Admin;
 
 util.inherits(Admin, events.EventEmitter);
 
-Admin.prototype._getSystemData = function() {
-  /*var writeToFiles = function() {
-    var data = Object.keys(self.engine._clients).length;
 
-    var stream = fs.createWriteStream(self._config.statFile);
-    stream.once('open', function() {
-      stream.write(data);
-    });
-  };*/
+Admin.prototype._serve = function () {
+    http.createServer(function (req, res) {
+        var requestObj = url.parse(req.url);
 
-  //setInterval(writeToFiles, 120000);
+        switch (requestObj.pathname)  {
+            case '/stats' :
+                res.writeHead(200, {'Content-Type': 'text/plain'});
+                res.write(Object.keys(this._transport._sessions).length.toString());
+                break;
+            default :
+                res.writeHead(404);
+                break;
+        }
+
+        res.end();
+    }.bind(this)).listen(this._config.listenPort, this._config.domainName);
 };
 
 Admin.prototype.subscribe = function(clientId) {
