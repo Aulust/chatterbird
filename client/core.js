@@ -1,35 +1,20 @@
 var Core = function() {
     this._connection = null;
     this._connectStatus = false;
-    this._servers = nodeConfig//this._getConfiguration();
+    this._servers = null;
+    this._queues = {};
+};
+
+Core.prototype._init = function(config) {
+    if(this._servers != null) {
+        return;
+    }
+
+    this._servers = config;
     this._numServers = this._servers.length;
     this._serverId = this._getRand(this._numServers);
-    this._queues = {};
 
     this._connect();
-};
-
-Core.prototype._getConfiguration = function() {
-    var data = this._getCookie('nodeConfig');
-
-    if(!data) {
-        return null;
-    }
-
-    return JSON.parse(decodeURIComponent(data));
-};
-
-Core.prototype._getCookie = function(name) {
-    var nameEQ = name + "=";
-    var ca = document.cookie.split(';');
-
-    for(var i = 0; i < ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
-    }
-
-    return null;
 };
 
 Core.prototype._getRand = function(max) {

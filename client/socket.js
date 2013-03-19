@@ -3,6 +3,10 @@ var Socket = function(queue) {
     Engine.register(this);
 };
 
+Socket.init = function(config) {
+    Engine._init(config);
+};
+
 Socket.prototype.send = function(data) {
     Engine.send(this, data);
 };

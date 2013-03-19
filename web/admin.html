@@ -1,6 +1,6 @@
 <html>
 <head>
-    <title>debug</title>
+    <title>Admin</title>
     <style type="text/css">
         ul.list {
             width:1200px;
@@ -96,7 +96,7 @@
             }
         });
 
-        $(document).ready(function() {
+        jQuery(document).ready(function($) {
             app = new UserListView({
                 el: $('#users'),
                 collection: new UserList({})
@@ -104,10 +104,8 @@
         });
     </script>
     <script src="http://cdn.sockjs.org/sockjs-0.3.js"></script>
-    <script>
-        nodeConfig = ['http://node.sc2tv.ru:60065'];
-    </script>
-    <script src="chatterbird.js" type="text/javascript"></script>
+    <script src="js/chatterbird.js"></script>
+    <script src="js/config.js"></script>
     <script type="text/javascript">
         var socket = new Chatterbird('admin');
 

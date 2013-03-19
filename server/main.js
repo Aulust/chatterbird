@@ -1,11 +1,10 @@
 var http  = require('http');
-var config = require(process.argv[2]);
+var config = require('./config');
 
 var Engine = require('./engine');
 
-var serverName = process.argv[3];
 var httpServer = http.createServer();
-var engine = new Engine(config[serverName]);
+var engine = new Engine(config);
 
 engine.register(httpServer);
-httpServer.listen(config[serverName].port);
+httpServer.listen(config.port);
