@@ -1,80 +1,67 @@
-var Utils = require('./utils');
-var Client = require('./client');
-var Protocol = require('../client/protocol');
+var fs = require('fs');
 
-var Engine = function(config, serverName) {
-  this._name = serverName;
-  this._config = config;
-  this._clients = {};
-  this._timers = {};
-  this._queues = {};
+var Transport = require('./transport');
 
-  for(var queue in this._config[serverName].queues) {
-    var queueConfig = this._config[serverName].queues[queue];
-    var Queue = require('./queues/' + queueConfig.name);
-    this._queues[queueConfig.name] = new Queue(this, queueConfig);
-  }
+var Engine = function(config) {
+    this._clientQueues = {};
+    this._queues = {};
+    this._transport = new Transport(this);
+
+    fs.readdirSync('./queues').forEach(function (queue) {
+        var queueName = queue.slice(0, queue.length - 3);
+        var Queue = require('./queues/' + queueName);
+
+        this._queues[queueName] = new Queue(config.queues[queueName]);
+        this._queues[queueName].on('publish', this.publish.bind(this, queueName));
+    }, this);
+
+    this._queues['admin']._engine = this;
+    this._queues['admin']._transport = this._transport;
 };
 
 module.exports = Engine;
 
-Engine.prototype.createClient = function() {
-  var clientId = Utils.random();
-  while (this._clients.hasOwnProperty(clientId))
-    clientId = Utils.random();
-
-  this._clients[clientId] = new Client(clientId);
-  this.updateTimer(clientId);
-
-  return clientId;
+Engine.prototype.register = function(server) {
+    this._transport.register(server);
 };
 
-Engine.prototype.receive = function(clientId, callback, scope) {
-  if(!this.clientExist(clientId)) {
-    return Protocol.createReceiveResponseMessage(clientId, null, Protocol.CLIENT_NOT_EXIST, null);
-  }
-
-  this._clients[clientId].setReceiveRequest(callback, scope);
-  this.updateTimer(clientId);
+Engine.prototype.createClient = function(clientId) {
+    this._clientQueues[clientId] = [];
 };
 
 Engine.prototype.deleteClient = function(clientId) {
-  if(!this.clientExist(clientId)) {
-    return;
-  }
+    if(!this._clientQueues[clientId]) {
+        return;
+    }
 
-  for(var queue in this._queues) {
-    this._queues[queue].unsubscribe(this._clients[clientId]);
-  }
+    this._clientQueues[clientId].forEach(function(queue) {
+        this._queues[queue].emit('unsubscribe', clientId);
+    }, this);
 
-  this._clients[clientId]._delete();
-  
-  delete this._clients[clientId];
+    delete this._clientQueues[clientId];
 };
 
-Engine.prototype.clientExist = function(clientId) {
-  return this._clients.hasOwnProperty(clientId);
+Engine.prototype.message = function(clientId, data) {
+    if(!this._clientQueues[clientId]) {
+        return;
+    }
+
+    if(this._validateMessage(data)) {
+        if(this._clientQueues[clientId].indexOf(data.queue) == -1) {
+            this._queues[data.queue].emit('subscribe', clientId);
+            this._clientQueues[clientId].push(data.queue);
+        }
+
+        this._queues[data.queue].emit('message', data.message);
+    }
 };
 
-Engine.prototype.updateTimer = function(clientId) {
-  var timeoutId = this._timers[clientId];
-  var self = this;
-  var timerFunction = function() { self.deleteClient(clientId); };
-
-  if(timeoutId !== null) {
-    clearTimeout(timeoutId);
-  }
-
-  this._timers[clientId] = setTimeout(timerFunction, 30000, clientId);
+Engine.prototype.publish = function(queue, clients, message) {
+    this._transport.send(clients, {queue: queue, message: message});
 };
 
-Engine.prototype.subscribe = function(clientId, queue, params) {
-  if(!this.clientExist(clientId)) {
-    return [Protocol.CLIENT_NOT_EXIST, null];
-  }
-  if(!(queue in this._queues)) {
-    return [Protocol.QUEUE_NOT_FOUND, null];
-  }
-
-  return this._queues[queue].subscribe(this._clients[clientId], params);
+Engine.prototype._validateMessage = function(data) {
+    return Object.prototype.toString.call(data) === "[object Object]" &&
+        data.hasOwnProperty('queue') && data.hasOwnProperty('message') &&
+        this._queues.hasOwnProperty(data.queue);
 };

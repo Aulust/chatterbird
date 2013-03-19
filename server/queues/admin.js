@@ -1,48 +1,59 @@
-var fs = require('fs');
+var util = require("util");
+var events = require("events");
+var http = require('http');
+var url = require('url');
 
-var Admin = function(engine, config) {
-  this._engine = engine;
-  this._config = config;
-  this._clients = {};
+/*
+* This is special queue with access to server internals
+*/
+var Admin = function(config) {
+    this._config = config;
+    this._clients = {};
 
-  this._getSystemData();
+    this.on('subscribe', this.subscribe.bind(this));
+    this.on('unsubscribe', this.unsubscribe.bind(this));
+
+    setInterval(this._publishInfo.bind(this), 4000);
+    this._serve();
 };
 
 module.exports = Admin;
 
-Admin.prototype._getSystemData = function() {
-  var self = this;
-  var timerFunction = function() {
+util.inherits(Admin, events.EventEmitter);
+
+
+Admin.prototype._serve = function () {
+    http.createServer(function (req, res) {
+        var requestObj = url.parse(req.url);
+
+        switch (requestObj.pathname)  {
+            case '/stats' :
+                res.writeHead(200, {'Content-Type': 'text/plain'});
+                res.write(Object.keys(this._transport._sessions).length.toString());
+                break;
+            default :
+                res.writeHead(404);
+                break;
+        }
+
+        res.end();
+    }.bind(this)).listen(this._config.listenPort, this._config.domainName);
+};
+
+Admin.prototype.subscribe = function(clientId) {
+    this._clients[clientId] = '';
+};
+
+Admin.prototype.unsubscribe = function(clientId) {
+    delete this._clients[clientId];
+};
+
+Admin.prototype._publishInfo = function() {
     var data = {
-      'name': self._engine._name,
-      'connectedClients': Object.keys(self._engine._clients).length,
-      'queues': Object.keys(self._engine._queues)
+        'sessions': Object.keys(this._transport._sessions),
+        'queues': Object.keys(this._engine._queues),
+        'clientsInfo': this._engine._clientQueues
     };
 
-    for(var client in self._clients) {
-      self._clients[client].addMessage('admin', data);
-    }
-  };
-
-  var writeToFiles = function() {
-    var data = Object.keys(self._engine._clients).length;
-
-    var stream = fs.createWriteStream("/tmp/nodestat");
-    stream.once('open', function(fd) {
-      stream.write(data);
-    });
-  };
-
-  setInterval(timerFunction, 4000);
-  setInterval(writeToFiles, 120000);
-};
-
-Admin.prototype.subscribe = function(client, params) {
-  this._clients[client.id] = client;
-
-  return [200, null];
-};
-
-Admin.prototype.unsubscribe = function(client) {
-  delete this._clients[client.id];
+    this.emit('publish', this._clients, data);
 };

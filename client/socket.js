@@ -1,11 +1,19 @@
 var Socket = function(queue) {
-  this._queue = queue;
-  this._connection = Core.getConnection(this);
-  this._connection.addSocket(this);
-  this.connectionParams = null;
+    this.queue = queue;
+    Engine.register(this);
 };
 
-Socket.prototype.connect = function(data) {
-  this.connectionParams = data;
-  this._connection.connectSocket(this);
+Socket.init = function(config) {
+    Engine._init(config);
+};
+
+Socket.prototype.send = function(data) {
+    Engine.send(this, data);
+};
+
+Socket.prototype.emit = function(type) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    if (this['on' + type]) {
+        this['on' + type].apply(this, args);
+    }
 };
