@@ -16,6 +16,7 @@
                 var $elem = $template.clone();
 
                 $elem.children('.title').text(message.description.title);
+                $elem.children('.teaser').text(message.description.teaser);
                 $notifications.prepend($elem);
             };
 
@@ -46,6 +47,7 @@
 <body>
     <p id="notification_template">
         <span class="title"></span>
+        <span class="teaser"></span>
         <span class="casters"></span>
         <span class="link"></span>
     </p>

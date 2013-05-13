@@ -44,3 +44,14 @@ Utils.strip_tags = function(input, allowed) {
 Utils.filter_text = function(text) {
     return text.replace(/(\r\n|\n|\r)/gm," ").replace(/\s+/g," ");
 };
+
+Utils.trim_text = function(text, length) {
+    var trimmed = text.substr(0, length);
+    trimmed = trimmed.substr(0, Math.min(length, trimmed.lastIndexOf(" ")))
+
+    if(text.length > length) {
+        trimmed += '...'
+    }
+
+    return trimmed;
+};

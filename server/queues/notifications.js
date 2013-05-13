@@ -45,6 +45,7 @@ Notifications.prototype.processMessage = function(message) {
     if(message.description.teaser) {
         message.description.teaser = Utils.strip_tags(message.description.teaser);
         message.description.teaser = Utils.filter_text(message.description.teaser);
+        message.description.teaser = Utils.trim_text(message.description.teaser, 150);
     }
     if(message.description.game) {
         message.description.game = Utils.strip_tags(message.description.game);
