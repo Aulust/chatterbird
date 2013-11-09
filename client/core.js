@@ -39,7 +39,7 @@ Core.prototype._handle = function(data) {
     var message = data.data.message;
 
     if(this._queues.hasOwnProperty(queue)) {
-        this._queues[queue].emit('message', message);
+        this._queues[queue].emit('message', JSON.parse(message));
     }
 };
 
@@ -57,13 +57,14 @@ Core.prototype._close = function(e) {
     }
 };
 
-Core.prototype.register = function(socket) {
+Core.prototype.register = function(socket, message) {
+    message = message || '';
     this._queues[socket.queue] = socket;
 
     var self = this;
     var sendConnect = function() {
         if(self._connectStatus) {
-            self._connection.send(JSON.stringify({queue: socket.queue, message: ''}));
+            self._connection.send(JSON.stringify({queue: socket.queue, message: message}));
             socket.emit('open');
         } else {
             setTimeout(sendConnect, 500);

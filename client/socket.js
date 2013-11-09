@@ -1,6 +1,6 @@
-var Socket = function(queue) {
+var Socket = function(queue, data) {
     this.queue = queue;
-    Engine.register(this);
+    Engine.register(this, data);
 };
 
 Socket.init = function(config) {
