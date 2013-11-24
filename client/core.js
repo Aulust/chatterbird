@@ -1,8 +1,9 @@
 var Core = function() {
     this._connection = null;
-    this._connectStatus = false;
+    this._connected = false;
     this._servers = null;
     this._queues = {};
+    this.messages = [];
 };
 
 Core.prototype._init = function(config) {
@@ -12,70 +13,89 @@ Core.prototype._init = function(config) {
 
     this._servers = config;
     this._numServers = this._servers.length;
-    this._serverId = this._getRand(this._numServers);
+    this._serverId = Math.floor(Math.random() * this._numServers);
 
     this._connect();
-};
-
-Core.prototype._getRand = function(max) {
-    return Math.floor(Math.random() * max);
 };
 
 Core.prototype._connect = function() {
     this._serverId = (this._serverId + 1) % this._numServers;
     this._connection = new SockJS(this._servers[this._serverId], null, {protocols_whitelist: ['xdr-polling', 'xhr-polling', 'iframe-xhr-polling']});
 
-    this._connection.onopen = this._connected.bind(this);
+    this._connection.onopen = this._open.bind(this);
     this._connection.onmessage = this._handle.bind(this);
     this._connection.onclose = this._close.bind(this);
 };
 
-Core.prototype._connected = function() {
-    this._connectStatus = true;
+Core.prototype._open = function() {
+    var messages = this.messages;
+    this.messages = [];
+
+    for (var queue in this._queues) {
+        this.fire(queue, 'connect');
+    }
+    for (var i = 0, len = messages.length; i < len; i++) {
+        if (messages[i].event !== 'connect') {
+            this.messages.add(messages[i]);
+        }
+    }
+
+    this._connected = true;
+
+    this._flush();
 };
 
 Core.prototype._handle = function(data) {
-    var queue = data.data.queue;
-    var message = data.data.message;
+    var handler = data.data.handler;
 
-    if(this._queues.hasOwnProperty(queue)) {
-        this._queues[queue].emit('message', JSON.parse(message));
+    if (this._queues.hasOwnProperty(handler)) {
+        this._queues[handler].trigger(data.data.event, data.data.data);
     }
 };
 
 Core.prototype._close = function(e) {
     this._connection = null;
-    for(var queue in this._queues) {
-        this._queues[queue].emit('close');
-        delete this._queues[queue];
+    this._connected = false;
+
+    for (var queue in this._queues) {
+        this._queues[queue].trigger('close');
     }
 
-    this._connectStatus = false;
-
-    if(e.code !== 2000) {
+    if (e.code !== 2000) {
         setTimeout(this._connect.bind(this), 2000);
+    } else {
+        console.log('All transports failed');
     }
 };
 
-Core.prototype.register = function(socket, message) {
-    message = message || '';
-    this._queues[socket.queue] = socket;
-
-    var self = this;
-    var sendConnect = function() {
-        if(self._connectStatus) {
-            self._connection.send(JSON.stringify({queue: socket.queue, message: message}));
-            socket.emit('open');
-        } else {
-            setTimeout(sendConnect, 500);
-        }
-    };
-
-    sendConnect();
+Core.prototype._flush = function() {
+    for (var i = 0, len = this.messages.length; i < len; i++) {
+        this._connection.send(JSON.stringify(this.messages[i]));
+    }
+    this.messages = [];
 };
 
-Core.prototype.send = function(socket, message) {
-    if(self._connectStatus) {
-        self._connection.send(JSON.stringify({queue: socket.queue, message: message}));
+Core.prototype.register = function(socket) {
+    this._queues[socket.queue] = socket;
+    this.fire(socket.queue, 'connect');
+};
+
+Core.prototype.fire = function(handler, event, data) {
+    if (!event) {
+        return;
+    }
+
+    var message = {
+        handler: handler,
+        event: event
+    };
+    if (data) {
+        message['data'] = data;
+    }
+
+    if (this._connected) {
+        this._connection.send(JSON.stringify(message));
+    } else {
+        this.messages.push(message);
     }
 };

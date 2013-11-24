@@ -11,31 +11,35 @@
             var $notifications = $('#notifications');
             var socket = new Chatterbird('notifications');
 
-            socket.onmessage = function(message) {
+            socket.on('notification', function(message) {
                 var $elem = $template.clone();
 
                 $elem.children('.title').text(message.description.title);
                 $elem.children('.teaser').text(message.description.teaser);
                 $notifications.prepend($elem);
-            };
+            });
 
             $('form').submit(function() {
                 $.ajax({
                     type: 'POST',
                     url: '/notifications',
-                    data: JSON.stringify({
-                        type: $('select[name=type]').val(),
-                        description: {
-                            title: $('input[name=title]').val(),
-                            teaser: $('textarea[name=teaser]').val()
-                        },
-                        casters: {
-                            caster: $('input[name=caster]').val()
-                        },
-                        link: {
-                            url: $('input[name=url]').val()
+                    data: JSON.stringify([{
+                        handler: 'notifications',
+                        event: 'notification',
+                        data: {
+                            type: $('select[name=type]').val(),
+                            description: {
+                                title: $('input[name=title]').val(),
+                                teaser: $('textarea[name=teaser]').val()
+                            },
+                            casters: {
+                                caster: $('input[name=caster]').val()
+                            },
+                            link: {
+                                url: $('input[name=url]').val()
+                            }
                         }
-                    })
+                    }])
                 });
 
                 return false;
