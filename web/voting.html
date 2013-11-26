@@ -1,0 +1,78 @@
+<html>
+<head>
+    <title>Notifications administration</title>
+
+    <script src="/js/jquery-1.5.2.js" type="text/javascript"></script>
+    <script src="/js/chatterbird.js" type="text/javascript"></script>
+    <script src="/js/config.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            var $template = $('#notification_template');
+            var $notifications = $('#notifications');
+            var socket = new Chatterbird('voting');
+
+            socket.on('status', function(message) {
+                console.log(message);
+            });
+
+            $('form').submit(function() {
+                $.ajax({
+                    type: 'POST',
+                    url: '/notifications',
+                    data: JSON.stringify([{
+                        handler: 'notifications',
+                        event: 'notification',
+                        data: {
+                            type: $('select[name=type]').val(),
+                            description: {
+                                title: $('input[name=title]').val(),
+                                teaser: $('textarea[name=teaser]').val()
+                            },
+                            casters: {
+                                caster: $('input[name=caster]').val()
+                            },
+                            link: {
+                                url: $('input[name=url]').val()
+                            }
+                        }
+                    }])
+                });
+
+                return false;
+            });
+        });
+    </script>
+</head>
+<body>
+    <p id="notification_template">
+        <span class="title"></span>
+        <span class="teaser"></span>
+        <span class="casters"></span>
+        <span class="link"></span>
+    </p>
+
+    <form action="/notifications" method="post">
+        Type:
+        <select name="type">
+            <option value="stream">Stream</option>
+            <option value="userstream">Userstream</option>
+            <option value="realstream">Realstream</option>
+            <option value="important">Important</option>
+        </select>
+        <br/>
+        Title: <input type="text" name="title" />
+        <br/>
+        Teaser: <br/><textarea name="teaser" ></textarea>
+        <br/>
+        Caster: <input type="text" name="caster"/>
+        <br/>
+        Link: <input type="text" name="url"/>
+
+        <input type="submit"/>
+    </form>
+
+    <hr/>
+
+    <div id="notifications"></div>
+</body>
+</html>
