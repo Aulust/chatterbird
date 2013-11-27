@@ -36,7 +36,7 @@ Core.prototype._open = function() {
     }
     for (var i = 0, len = messages.length; i < len; i++) {
         if (messages[i].event !== 'connect') {
-            this.messages.add(messages[i]);
+            this.messages.push(messages[i]);
         }
     }
 
